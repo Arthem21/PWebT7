@@ -1,0 +1,20 @@
+@page "/calendario"
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+@inject Contexto ctx
+@using Microsoft.EntityFrameworkCore
+
+<h3 class="text-center">Calendario de Detenciones</h3>
+
+<Calendar ListaDetenciones="@detenciones" />
+
+@code {
+    private List<Detenciones> detenciones = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        detenciones = await ctx.Detenciones.ToListAsync();
+    }
+}
+
+

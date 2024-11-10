@@ -1,0 +1,164 @@
+﻿@page "/"
+@page "/mantenimiento"
+@rendermode InteractiveServer
+@inject Contexto ctx
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>Mantenimiento</PageTitle>
+
+<h1>Mantenimiento de detenciones</h1>
+
+@if(modo==Modo.Lista){
+    <h3>Lista de detenciones</h3>
+    <div class="text-end mb-3">
+            <button class="btn btn-dark btn-lg" @onclick="()=>modo = Modo.Editar"> agregar </button>
+        </div>
+    <table class="table table-tripped table-bordered">
+        
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Nombre</th>
+                <th>FechaD</th>
+                <th>Coordenadas</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            
+            @foreach(var x in detenciones){
+                <tr>
+                    <td>@x.FechaD</td>
+                    <td>@x.Nombre @x.Apellido</td>
+                    <td>@x.FechaD</td>
+                    <td>@x.coordenadas()</td>
+                    <td>
+                        <div class="text-center mb-3">
+                            <div class="row" >
+                                <button class="btn btn-dark  btn-sm" @onclick="()=>editar(x)"> Editar </button>
+                            </div>
+                            <div class="row" >
+                                <button class="btn btn-danger btn-sm" @onclick="()=>borrar(x)"> Eliminar </button>
+                            </div>
+                        </div>
+                    </td>
+                    
+                </tr>
+            }
+        </tbody>
+    </table>
+}else if(modo== Modo.Editar){
+    <h3>Editar</h3> 
+    
+    <EditForm Model="@detencion" OnValidSubmit="guardar">
+    <DataAnnotationsValidator/>	
+    <ValidationSummary/>
+
+    <div class="row mb-3">
+        <div class="col">
+            <label for="Nombre" class="form-label">Nombre</label>
+            <InputText id= "Nombre" class="form-control" @bind-Value="@detencion.Nombre"/>
+        </div>
+        <div class="col">
+            <label for="Apellido" class="form-label">Apellido</label>
+            <InputText id= "Apellido" class="form-control" @bind-Value="@detencion.Apellido"/>
+        </div>
+         <div class="col">
+            <label for="FechaD" class="form-label">Fecha de detencion</label>
+            <InputDate id= "FechaD" class="form-control" @bind-Value="@detencion.FechaD"/>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col">
+            <label for="Pasaporte" class="form-label">Pasaporte</label>
+            <InputText id= "Pasaporte" class="form-control" @bind-Value="@detencion.Pasaporte"/>
+        </div>
+        <div class="col">
+            <label for="FechaN" class="form-label">Fecha de Nacimiento</label>
+            <InputDate id= "FechaN" class="form-control" @bind-Value="@detencion.FechaN"/>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col">
+            <label for="Latitud" class="form-label">Latitud</label>
+            <InputNumber id= "Latitud" class="form-control" @bind-Value="@detencion.latitud"/>
+        </div>
+        <div class="col">
+            <label for="Longitud" class="form-label">Longitud</label>
+            <InputNumber id= "Longitud" class="form-control" @bind-Value="@detencion.longitud"/>
+        </div>
+    </div>
+
+    <div class="text-center mb-3">
+        <button type="submit" class="btn btn-dark btn-lg">Añadir detención</button>
+    </div>
+</EditForm>
+
+
+    
+}
+
+
+
+@code{
+
+    enum Modo{
+
+        Lista,
+        Editar
+    }
+
+    Modo modo=Modo.Lista;
+    List<Detenciones> detenciones =new List<Detenciones>();
+    Detenciones detencion= new Detenciones();
+
+    protected async Task guardar(){
+
+        if(detencion.Id > 0){
+
+            ctx.Detenciones.Update(detencion);
+            
+            
+        }
+
+        else {
+            ctx.Detenciones.Add(detencion);
+            detenciones.Add(detencion);
+        }
+
+        await ctx.SaveChangesAsync();
+        StateHasChanged();
+
+        detencion=new Detenciones();
+        modo= Modo.Lista;
+    }
+
+    protected async Task borrar(Detenciones x){
+        
+        ctx.Detenciones.Remove(x);
+        detenciones.Remove(x);
+
+        await ctx.SaveChangesAsync();
+        StateHasChanged();
+
+        detencion=new Detenciones();
+        modo= Modo.Lista;
+    }
+
+    public void editar(Detenciones x){
+        this.detencion= x;
+        modo= Modo.Editar;
+    }
+
+    protected override async Task OnAfterRenderAsync (bool render){
+
+        if(render){
+            detenciones= await ctx.Detenciones.ToListAsync();
+            await ctx.SaveChangesAsync();
+            
+        }
+        StateHasChanged();
+    }
+    
+}

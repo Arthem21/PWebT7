@@ -1,0 +1,103 @@
+@using System.Globalization
+@using tarea7
+@inherits LayoutComponentBase
+@rendermode InteractiveServer
+
+<div class="calendar-container">
+   
+    <div class="calendar-nav">
+        <button class="btn btn-dark" @onclick="MostrarMesAnterior">« Mes Anterior</button>
+        <span>@mesActual.ToString("MMMM yyyy", CultureInfo.CreateSpecificCulture("es-ES"))</span>
+        <button class="btn btn-dark" @onclick="MostrarMesSiguiente">Mes Siguiente »</button>
+    </div>
+
+    
+    <div class="calendar-header">
+        @foreach (var dia in diasDeLaSemana)
+        {
+            <div class="calendar-day-header">@dia</div>
+        }
+    </div>
+
+   
+    <div class="calendar-days">
+        @foreach (var semana in semanasDelMes)
+        {
+            <div class="calendar-week">
+                @foreach (var dia in semana)
+                {
+                    <div class="calendar-day @(dia.HasValue ? "" : "empty-day")">
+                        @if (dia.HasValue)
+                        {
+                            <span class="day-number">@dia.Value.Day</span>
+                            @if (detencionesPorDia.TryGetValue(dia.Value, out int totalDetenciones) && totalDetenciones > 0)
+                            {
+                                <span class="day-count">@totalDetenciones</span>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<Detenciones> ListaDetenciones { get; set; } = new List<Detenciones>();
+
+    private DateTime mesActual = DateTime.Today;
+    private Dictionary<DateTime, int> detencionesPorDia = new();
+    private List<List<DateTime?>> semanasDelMes = new();
+    private string[] diasDeLaSemana = { "Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb" };
+
+    protected override void OnParametersSet()
+    {
+        ActualizarCalendario();
+    }
+
+    private void ActualizarCalendario()
+    {
+        
+        detencionesPorDia = ListaDetenciones
+            .Where(d => d.FechaD.HasValue && d.FechaD.Value.Month == mesActual.Month && d.FechaD.Value.Year == mesActual.Year)
+            .GroupBy(d => d.FechaD.Value.Date)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        
+        semanasDelMes = new List<List<DateTime?>>();
+        DateTime primerDiaMes = new DateTime(mesActual.Year, mesActual.Month, 1);
+        int diasEnMes = DateTime.DaysInMonth(mesActual.Year, mesActual.Month);
+        int diaSemanaInicio = (int)primerDiaMes.DayOfWeek;
+        
+        List<DateTime?> semanaActual = Enumerable.Repeat<DateTime?>(null, diaSemanaInicio).ToList();
+        
+        for (int dia = 1; dia <= diasEnMes; dia++)
+        {
+            semanaActual.Add(primerDiaMes.AddDays(dia - 1));
+            if (semanaActual.Count == 7)
+            {
+                semanasDelMes.Add(semanaActual);
+                semanaActual = new List<DateTime?>();
+            }
+        }
+        
+        if (semanaActual.Count > 0)
+        {
+            semanaActual.AddRange(Enumerable.Repeat<DateTime?>(null, 7 - semanaActual.Count));
+            semanasDelMes.Add(semanaActual);
+        }
+    }
+
+    private void MostrarMesAnterior()
+    {
+        mesActual = mesActual.AddMonths(-1);
+        ActualizarCalendario();
+    }
+
+    private void MostrarMesSiguiente()
+    {
+        mesActual = mesActual.AddMonths(1);
+        ActualizarCalendario();
+    }
+}

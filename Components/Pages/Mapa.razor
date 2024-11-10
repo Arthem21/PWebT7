@@ -1,0 +1,16 @@
+@page "/mapa"
+@rendermode InteractiveServer
+@inject Contexto ctx
+@using Microsoft.EntityFrameworkCore
+
+<AsgMap ListaDetenciones="@detenciones" />
+
+
+@code {
+    private List<Detenciones> detenciones = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        detenciones = await ctx.Detenciones.ToListAsync();
+    }
+}
